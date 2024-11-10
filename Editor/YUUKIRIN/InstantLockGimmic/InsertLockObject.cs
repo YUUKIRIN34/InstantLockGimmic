@@ -10,11 +10,11 @@ using System;
 
 public partial class Yuukirin_InstantLockGimmic : EditorWindow {
 
-    [MenuItem("YUUKIRIN/InstantLockGimmic")]
+    [MenuItem("YUUKIRIN/簡易ロックギミック")]
     private static void ShowWindow()
     {
         var window = GetWindow<Yuukirin_InstantLockGimmic>("UIElements");
-        window.titleContent = new GUIContent("ゆうきりん/ロックギミック");
+        window.titleContent = new GUIContent("ゆうきりん/簡易ロックギミック");
         window.Show();
     }
     private ObjectField YUUKIRINLockGimmicTargetField;
