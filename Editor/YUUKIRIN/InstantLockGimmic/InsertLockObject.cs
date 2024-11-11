@@ -4,7 +4,6 @@ using UnityEngine.UIElements;
 using UnityEditor.UIElements;
 using VRC.Dynamics;
 using VRC.SDK3.Dynamics.Constraint.Components;
-using System;
 
 // using VRC.Dynamics;
 
@@ -21,7 +20,8 @@ public partial class Yuukirin_InstantLockGimmic : EditorWindow {
     private ObjectField YUUKIRINLockGimmicChildField;
     private Toggle YUUKIRINLockGimmicPlaceField;
     private Button button;
-    private Label YUUKIRINLockGimmicTargetErrorElement;
+    private HelpBox YUUKIRINLockGimmicTargetErrorElement;
+    private HelpBox YUUKIRINLockGimmicResultElement;
     
     private void CreateGUI() {
         VisualElement root = rootVisualElement;
@@ -32,9 +32,9 @@ public partial class Yuukirin_InstantLockGimmic : EditorWindow {
             objectType = typeof(GameObject),
         };
         YUUKIRINLockGimmicTargetErrorElement = new(){
-            style = {
-                color = Color.red
-            }
+            messageType = HelpBoxMessageType.Error,
+            text = "ロックオフ時に追従するオブジェクトが指定されていません。",
+            visible = false
         };
         Label YUUKIRINLockGimmicChildLabelElement = new(){
             text="ロックするオブジェクト"
@@ -49,7 +49,12 @@ public partial class Yuukirin_InstantLockGimmic : EditorWindow {
         button = new(){
             text="適用"
         };
-        YUUKIRINLockGimmicTargetField.RegisterValueChangedCallback(_ => ValidateRequired());
+        YUUKIRINLockGimmicTargetField.RegisterValueChangedCallback(_ => ValidateRequired(YUUKIRINLockGimmicTargetField, YUUKIRINLockGimmicTargetErrorElement));
+        YUUKIRINLockGimmicResultElement = new(){
+            messageType = HelpBoxMessageType.Info,
+            text = "成功",
+            visible = false
+        };
 
         root.Add(YUUKIRINLockGimmicTargetLabelElement);
         root.Add(YUUKIRINLockGimmicTargetField);
@@ -59,27 +64,47 @@ public partial class Yuukirin_InstantLockGimmic : EditorWindow {
         root.Add(YUUKIRINLockGimmicChildLabelElement);
         root.Add(YUUKIRINLockGimmicChildField);
         root.Add(button);
+        root.Add(YUUKIRINLockGimmicResultElement);
         button.clicked += () => {
             CreateLockGimmic();
         };
     }
 
-    private void ValidateRequired() {
-        GameObject target = (GameObject)YUUKIRINLockGimmicTargetField.value;
-        if (!target) {
-            YUUKIRINLockGimmicTargetErrorElement.text = "ロックオフ時に追従するオブジェクトが指定されていません。";
-            YUUKIRINLockGimmicTargetField.style.borderBottomColor = Color.red;
-            button.SetEnabled(false);
-        }
-        if (target) {
-            YUUKIRINLockGimmicTargetErrorElement.text = "";
-        }
-        if (target) {
-            button.SetEnabled(true);
+    private bool ValidateRequired<T>(BaseField<T> field, HelpBox helpBox) {
+        T value = (T)field.value;
+        helpBox.visible = value == null;
+        SetResultVisible(false);
+        return SetButtonEnable();
+    }
+
+    private bool YUUKIRINLockGimmicTargetFieldFilled () {
+        Object value = (Object)YUUKIRINLockGimmicTargetField.value;
+        if (!value) {
+            return false;
+        } else {
+            return true;
         }
     }
 
+    private bool SetButtonEnable () {
+        button.SetEnabled(YUUKIRINLockGimmicTargetFieldFilled());
+        return YUUKIRINLockGimmicTargetFieldFilled();
+    }
+
+    private void SetResultVisible (bool val) {
+        YUUKIRINLockGimmicResultElement.visible = val;
+    }
+
+    private bool ValidateAll () {
+        ValidateRequired<Object>(YUUKIRINLockGimmicTargetField, YUUKIRINLockGimmicTargetErrorElement);
+        SetResultVisible(false);
+        return SetButtonEnable();
+    }
+
     private void CreateLockGimmic() {
+        if (!ValidateAll()) {
+            return;
+        }
         GameObject target = (GameObject)YUUKIRINLockGimmicTargetField.value;
         // ルートオブジェクト
         GameObject rootObject = target.transform.root.gameObject;
@@ -118,5 +143,7 @@ public partial class Yuukirin_InstantLockGimmic : EditorWindow {
             // ロック対象を指定したなら親子設定
             child.gameObject.transform.parent = Container.transform;
         }
+
+        SetResultVisible(true);
     }
 }
